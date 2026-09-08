@@ -362,6 +362,51 @@ p{color:var(--ink-soft);}
 .player .track{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.25);position:relative;overflow:hidden;}
 .player .track::after{content:"";position:absolute;inset:0;width:28%;background:var(--sun);}
 .read-link{font-weight:700;color:var(--sun);font-size:.88rem;display:inline-flex;align-items:center;gap:6px;}
+.media-more{text-align:center;margin-top:40px;}
+.cta-btn.outline-media{background:rgba(255,255,255,.1);color:#fff;border:2px solid rgba(255,255,255,.35);}
+.cta-btn.outline-media:hover{background:rgba(255,255,255,.18);}
+
+/* ================= صفحات داخلی: لیست مقالات + صفحه‌ی هر مقاله ================= */
+.page-header{
+  background:linear-gradient(135deg,var(--sky-dark),var(--sky));
+  color:#fff;padding:120px 6vw 70px;text-align:center;
+}
+.page-header .eyebrow{background:rgba(255,255,255,.16);color:var(--sun);}
+.page-header h1{color:#fff;font-size:clamp(1.8rem,3.5vw,2.6rem);margin-bottom:10px;}
+.page-header p{color:rgba(255,255,255,.85);max-width:560px;margin:0 auto;}
+.breadcrumb{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:18px;font-size:.85rem;color:rgba(255,255,255,.75);}
+.breadcrumb a{color:#fff;font-weight:700;}
+.breadcrumb i{font-size:.7rem;}
+
+.articles-listing{background:var(--cream);padding:70px 6vw;}
+.articles-listing .media-grid{margin-top:0;}
+.articles-listing .media-card{background:var(--paper);border:1px solid rgba(46,42,61,.08);box-shadow:var(--shadow);}
+.articles-listing .media-card h3{color:var(--ink);}
+.articles-listing .media-card p{color:var(--ink-soft);}
+.articles-listing .media-type{color:var(--coral-dark);}
+.articles-listing .read-link{color:var(--sky-dark);}
+.articles-listing .filter-btn{background:var(--mint);color:var(--sky-dark);border-color:transparent;}
+.articles-listing .filter-btn.is-active{background:var(--coral);border-color:var(--coral);color:#fff;}
+
+.article-page{background:var(--paper);padding:64px 6vw 90px;}
+.article-body{max-width:720px;margin:0 auto;}
+.article-body .article-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+.article-body h1{font-size:clamp(1.7rem,3.2vw,2.3rem);margin-bottom:20px;line-height:1.5;}
+.article-body h2{font-size:1.3rem;color:var(--sky-dark);margin-top:42px;margin-bottom:14px;}
+.article-body p{font-size:1.02rem;line-height:2;color:var(--ink-soft);margin-bottom:18px;}
+.article-body ul{margin:0 0 22px;padding-inline-start:22px;}
+.article-body ul li{font-size:1rem;line-height:1.95;color:var(--ink-soft);margin-bottom:10px;list-style:none;position:relative;padding-inline-start:26px;}
+.article-body ul li::before{
+  content:"\f303";font-family:"Font Awesome 6 Free";font-weight:900;
+  position:absolute;right:0;top:2px;color:var(--coral);font-size:.85rem;
+}
+.article-cta{
+  margin-top:48px;background:var(--mint);border-radius:var(--radius-md);
+  padding:28px;text-align:center;
+}
+.article-cta h3{color:var(--sky-dark);margin-bottom:8px;}
+.article-cta p{margin-bottom:20px;}
+.back-link{display:inline-flex;align-items:center;gap:8px;color:var(--sky-dark);font-weight:700;margin-bottom:30px;}
 
 .quotes{background:var(--cream);}
 .quote-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:36px;}

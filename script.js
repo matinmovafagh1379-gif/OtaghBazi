@@ -64,10 +64,9 @@ const todayIndex = dayMap[new Date().getDay()];
 const todayRow = document.querySelector('#hoursTable tr[data-day="' + todayIndex + '"]');
 if (todayRow) todayRow.classList.add('is-today');
 
-// ============ فرم رزرو: ارسال هم‌زمان به تلگرام و ایمیل ============
-const TELEGRAM_BOT_TOKEN = '8529446234:AAHrwKorZPlr9QOqhusU-viUX1jwHixGpYY';
-const TELEGRAM_CHAT_ID   = '75666671';
-const WEB3FORMS_KEY      = '2de49184-ce2d-4d3c-aeba-e692a236ab51';
+// ============ فرم رزرو: ارسال امن از طریق بک‌اند (Cloudflare Pages Function) ============
+// نکته‌ی امنیتی: دیگه هیچ توکن یا کلیدی اینجا نوشته نمی‌شه. همه‌چیز سمت سرور
+// (فایل functions/api/booking.js) و با Environment Variable مدیریت می‌شه.
 
 const bookingForm = document.getElementById('bookingForm');
 const bookingSubmitBtn = bookingForm ? bookingForm.querySelector('button[type="submit"]') : null;
@@ -77,47 +76,6 @@ function bookingShowStatus(message, isError) {
   if (!bookingNoteEl) return;
   bookingNoteEl.textContent = message;
   bookingNoteEl.style.color = isError ? '#E8543F' : 'var(--grass)';
-}
-
-async function sendToTelegram(data) {
-  const text =
-    '📩 درخواست نوبت جدید از سایت\n\n' +
-    '👤 والد: ' + data.parent_name + '\n' +
-    '📞 تماس: ' + data.phone + '\n' +
-    '🧒 کودک: ' + (data.child_info || '—') + '\n' +
-    '📅 روز: ' + data.preferred_day + '\n' +
-    '🕐 زمان: ' + data.preferred_time + '\n' +
-    '📝 توضیح: ' + (data.message || '—');
-
-  const url = 'https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage';
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
-  });
-  const json = await res.json().catch(() => ({}));
-  console.log('[booking] telegram response:', res.status, json);
-  if (!res.ok) throw new Error('telegram failed: ' + res.status + ' ' + JSON.stringify(json));
-}
-
-async function sendToEmail(data) {
-  const res = await fetch('https://api.web3forms.com/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      access_key: WEB3FORMS_KEY,
-      subject: 'درخواست نوبت جدید — اتاق بازی',
-      'نام والد': data.parent_name,
-      'شماره تماس': data.phone,
-      'کودک': data.child_info || '—',
-      'روز پیشنهادی': data.preferred_day,
-      'زمان پیشنهادی': data.preferred_time,
-      'توضیح': data.message || '—'
-    })
-  });
-  const json = await res.json().catch(() => ({}));
-  console.log('[booking] web3forms response:', res.status, json);
-  if (!json.success) throw new Error('email failed: ' + res.status + ' ' + JSON.stringify(json));
 }
 
 if (bookingForm) {
@@ -130,20 +88,24 @@ if (bookingForm) {
     if (bookingSubmitBtn) { bookingSubmitBtn.disabled = true; bookingSubmitBtn.style.opacity = '.7'; }
     bookingShowStatus('در حال ارسال...', false);
 
-    const channels = ['تلگرام', 'ایمیل'];
-    const results = await Promise.allSettled([sendToTelegram(data), sendToEmail(data)]);
-    results.forEach((r, i) => {
-      if (r.status === 'rejected') {
-        console.error('[booking]', channels[i], 'خطا داد:', r.reason);
-      }
-    });
-    const okCount = results.filter(r => r.status === 'fulfilled').length;
+    try {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json().catch(() => ({}));
 
-    if (okCount > 0) {
-      bookingShowStatus('✅ درخواستت ثبت شد! به‌زودی باهات تماس می‌گیریم.', false);
-      bookingForm.reset();
-    } else {
-      bookingShowStatus('مشکلی پیش اومد — لطفاً از طریق تلفن یا پذیرش۲۴ اقدام کن.', true);
+      if (json.success) {
+        bookingShowStatus('✅ درخواستت ثبت شد! به‌زودی باهات تماس می‌گیریم.', false);
+        bookingForm.reset();
+      } else {
+        console.error('[booking] failed:', json);
+        bookingShowStatus('مشکلی پیش اومد — لطفاً از طریق تلفن یا پذیرش۲۴ اقدام کن.', true);
+      }
+    } catch (err) {
+      console.error('[booking] network error:', err);
+      bookingShowStatus('اتصال برقرار نشد — لطفاً از طریق تلفن یا پذیرش۲۴ اقدام کن.', true);
     }
 
     if (bookingSubmitBtn) { bookingSubmitBtn.disabled = false; bookingSubmitBtn.style.opacity = '1'; }

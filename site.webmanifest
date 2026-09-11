@@ -1,0 +1,13 @@
+{
+  "name": "اتاق بازی | مشاوره و روان‌شناسی کودک",
+  "short_name": "اتاق بازی",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8EC",
+  "theme_color": "#2FA8E0",
+  "icons": [
+    { "src": "/images/favicon-16x16.png", "sizes": "16x16", "type": "image/png" },
+    { "src": "/images/favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "/images/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

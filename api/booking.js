@@ -1,20 +1,22 @@
-// Vercel Serverless Function — جایگزین worker.js برای هاست روی Vercel
-// هیچ کلید یا توکنی اینجا نوشته نشده؛ همه از Environment Variables
-// (تنظیمات پروژه در داشبورد Vercel، بخش Settings > Environment Variables) خونده می‌شن.
+// Vercel Edge Function — /api/booking
+// نسخه‌ی Vercel از همون بک‌اند رزرو نوبت. اگه سایت روی Vercel بمونه، این فایل
+// جایگزین worker.js (که مخصوص Cloudflare Workers بود) می‌شه.
+// توکن‌ها از Environment Variables پروژه‌ی Vercel خونده می‌شن (Settings > Environment Variables)،
+// نه از کد. هیچ‌وقت اینجا مستقیم ننویسشون.
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ success: false, error: 'Method not allowed' });
-    return;
+export const config = { runtime: 'edge' };
+
+export default async function handler(request) {
+  if (request.method !== 'POST') {
+    return jsonResponse({ success: false, error: 'Method not allowed' }, 405);
   }
 
   try {
-    const data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const data = await request.json();
 
-    // ---------- 1) هانی‌پات: فیلد مخفی که فقط ربات‌ها پر می‌کنن ----------
+    // ---------- 1) هانی‌پات ----------
     if (data._gotcha) {
-      res.status(200).json({ success: true });
-      return;
+      return jsonResponse({ success: true }, 200);
     }
 
     // ---------- 2) اعتبارسنجی سمت سرور ----------
@@ -26,17 +28,36 @@ export default async function handler(req, res) {
     const message = sanitize(data.message);
 
     if (!parentName || parentName.length > 100) {
-      res.status(400).json({ success: false, error: 'نام والد نامعتبره.' });
-      return;
+      return jsonResponse({ success: false, error: 'نام والد نامعتبره.' }, 400);
     }
     if (!phone || !/^[\d+\-\s()]{6,20}$/.test(phone)) {
-      res.status(400).json({ success: false, error: 'شماره تماس نامعتبره.' });
-      return;
+      return jsonResponse({ success: false, error: 'شماره تماس نامعتبره.' }, 400);
     }
 
-    // ---------- 3) ارسال به تلگرام ----------
-    const results = { telegram: false, email: false };
+    // ---------- 3) بررسی Cloudflare Turnstile (در صورت فعال بودن) ----------
+    const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
+    if (TURNSTILE_SECRET_KEY) {
+      const turnstileToken = data['cf-turnstile-response'];
+      if (!turnstileToken) {
+        return jsonResponse({ success: false, error: 'لطفاً دوباره تلاش کن (کپچا).' }, 400);
+      }
+      const verify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: TURNSTILE_SECRET_KEY,
+          response: turnstileToken,
+          remoteip: request.headers.get('x-forwarded-for') || ''
+        })
+      });
+      const verifyJson = await verify.json();
+      if (!verifyJson.success) {
+        return jsonResponse({ success: false, error: 'تایید کپچا رد شد.' }, 400);
+      }
+    }
 
+    // ---------- 4) ارسال به تلگرام ----------
+    const results = { telegram: false, email: false };
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
     const WEB3FORMS_KEY = process.env.WEB3FORMS_KEY;
@@ -63,7 +84,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ---------- 4) ارسال ایمیل (Web3Forms) ----------
+    // ---------- 5) ارسال ایمیل (Web3Forms) ----------
     if (WEB3FORMS_KEY) {
       try {
         const emailRes = await fetch('https://api.web3forms.com/submit', {
@@ -88,14 +109,21 @@ export default async function handler(req, res) {
     }
 
     const anySuccess = results.telegram || results.email;
-    res.status(anySuccess ? 200 : 502).json({ success: anySuccess, channels: results });
+    return jsonResponse({ success: anySuccess, channels: results }, anySuccess ? 200 : 502);
 
   } catch (err) {
-    res.status(400).json({ success: false, error: 'درخواست نامعتبر بود.' });
+    return jsonResponse({ success: false, error: 'درخواست نامعتبر بود.' }, 400);
   }
 }
 
 function sanitize(value) {
   if (typeof value !== 'string') return '';
   return value.replace(/[<>]/g, '').trim().slice(0, 500);
+}
+
+function jsonResponse(obj, status) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' }
+  });
 }

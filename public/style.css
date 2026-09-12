@@ -93,6 +93,7 @@ p{color:var(--ink-soft);}
   transition:transform .18s ease;
 }
 .cta-btn:hover{transform:translateY(-2px) rotate(-1deg);}
+.cta-btn:active{transform:scale(.96);}
 .cta-btn.outline{background:transparent;color:var(--sky-dark);border:2px solid var(--sky);box-shadow:none;}
 
 /* دکمه‌ی همبرگری — همیشه یه‌جا و یه شکل ثابت می‌مونه، فقط خطوطش تبدیل به ضربدر می‌شن */
@@ -290,9 +291,30 @@ p{color:var(--ink-soft);}
   backface-visibility:hidden;
   -webkit-backface-visibility:hidden;
 }
-.card:hover .cover{transform:rotateY(-80deg);}
-
 .card .card-body{padding:24px 26px;}
+
+@media (hover:hover) and (pointer:fine){
+  .card:hover .cover{transform:rotateY(-80deg);}
+}
+
+@media (max-width:900px), (hover:none){
+  .card{
+    height:auto;
+    display:block;
+    perspective:none;
+    transform-style:flat;
+  }
+  .card .cover{
+    position:static;
+    width:100%;
+    aspect-ratio:16/10;
+    transform:none;
+    transition:none;
+    border-radius:var(--radius-md) var(--radius-md) 0 0;
+  }
+  .card .card-body{padding:20px 22px 26px;}
+  .card:active{transform:scale(.985);transition:transform .15s ease;}
+}
 .card .icon-badge{width:44px;height:44px;border-radius:14px;background:rgba(255,111,89,.12);display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
 .card .icon-badge i{color:var(--coral);font-size:1.1rem;}
 .card p{font-size:.92rem;line-height:1.85;margin:0;}

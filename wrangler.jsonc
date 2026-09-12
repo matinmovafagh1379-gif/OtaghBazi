@@ -1,0 +1,10 @@
+{
+  "name": "otagh-bazi",
+  "compatibility_date": "2026-09-11",
+  "main": "./worker.js",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  }
+}

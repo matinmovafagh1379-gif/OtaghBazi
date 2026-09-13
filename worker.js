@@ -27,7 +27,7 @@ async function handleBooking(request, env) {
 
     // ---------- 2) اعتبارسنجی سمت سرور ----------
     const parentName = sanitize(data.parent_name);
-    const phone = sanitize(data.phone);
+    const phone = sanitize(toEnglishDigits(data.phone));
     const childInfo = sanitize(data.child_info);
     const preferredDay = sanitize(data.preferred_day);
     const preferredTime = sanitize(data.preferred_time);
@@ -60,8 +60,13 @@ async function handleBooking(request, env) {
           body: JSON.stringify({ chat_id: env.TELEGRAM_CHAT_ID, text })
         });
         results.telegram = tgRes.ok;
+        if (!tgRes.ok) {
+          const errBody = await tgRes.text().catch(() => '');
+          console.error('[booking] telegram error:', tgRes.status, errBody);
+        }
       } catch (e) {
         results.telegram = false;
+        console.error('[booking] telegram exception:', e.message);
       }
     }
 
@@ -84,8 +89,12 @@ async function handleBooking(request, env) {
         });
         const emailJson = await emailRes.json().catch(() => ({}));
         results.email = !!emailJson.success;
+        if (!results.email) {
+          console.error('[booking] web3forms error:', emailRes.status, JSON.stringify(emailJson));
+        }
       } catch (e) {
         results.email = false;
+        console.error('[booking] web3forms exception:', e.message);
       }
     }
 
@@ -95,6 +104,20 @@ async function handleBooking(request, env) {
   } catch (err) {
     return jsonResponse({ success: false, error: 'درخواست نامعتبر بود.' }, 400);
   }
+}
+
+// ارقام فارسی/عربی رو به انگلیسی تبدیل می‌کنه تا اعتبارسنجی شماره تلفن خراب نشه
+function toEnglishDigits(str) {
+  if (typeof str !== 'string') return str;
+  const persian = '۰۱۲۳۴۵۶۷۸۹';
+  const arabic = '٠١٢٣٤٥٦٧٨٩';
+  return str.replace(/[۰-۹٠-٩]/g, (ch) => {
+    const pIndex = persian.indexOf(ch);
+    if (pIndex > -1) return String(pIndex);
+    const aIndex = arabic.indexOf(ch);
+    if (aIndex > -1) return String(aIndex);
+    return ch;
+  });
 }
 
 function sanitize(value) {
